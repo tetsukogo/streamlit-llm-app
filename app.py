@@ -2,57 +2,57 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 import streamlit as st
 
 
+st.title("法律・医療: 相談アプリ")
 
-st.title("金融・キャリア: 相談アプリ")
+st.write("##### 専門家の種類を選択し、LLMの振る舞いを切り替えます。\n\n- 法律の専門家: 法律相談や法的アドバイスを提供します。\n- 医療の専門家: 健康や医療に関するアドバイスを提供します。")
 
-st.write("##### 専門家の種類を選択してください。\n\n- 金融アドバイザー: お金や投資、家計管理などのアドバイスを提供します。\n- キャリアコンサルタント: 就職・転職・キャリア形成などのアドバイスを提供します。")
-
-
-expert_type = st.radio(
-    "専門家の種類を選択してください。",
-    ["金融アドバイザー", "キャリアコンサルタント"]
+selected_item = st.radio(
+    "動作モードを選択してください。",
+    ["法律の専門家", "医療の専門家"]
 )
 
+st.divider()
 
-from langchain.chat_models import ChatOpenAI
-from langchain.schema import SystemMessage, HumanMessage
+if selected_item == "法律の専門家":
+    input_message1 = st.text_input(label="法律相談を入力してください。")
 
-def get_system_message(expert_type):
-    if expert_type == "金融アドバイザー":
-        return "あなたは日本の金融アドバイザーです。お金、投資、家計管理、保険など金融全般の相談に、専門的かつ分かりやすく、リスクや注意点も添えて回答してください。"
-    else:
-        return "あなたは日本のキャリアコンサルタントです。就職、転職、キャリア形成、職場の人間関係などキャリア全般の相談に、専門的かつ分かりやすく、アドバイスや注意点も添えて回答してください。"
-
-def ask_llm(user_text, expert_type):
-    """
-    入力テキストと専門家タイプを受け取り、LLMからの回答を返す
-    """
-    system_message = get_system_message(expert_type)
-    chat = ChatOpenAI()
-    messages = [
-        SystemMessage(content=system_message),
-        HumanMessage(content=user_text)
-    ]
-    response = chat(messages)
-    return response.content
+else:
+    input_message2 = st.text_input(label="医療相談を入力してください。")
 
 
-user_input = st.text_area("質問や相談内容を入力してください。", height=100)
+import os
+from openai import OpenAI
+
+client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 
-if st.button("LLMに質問する"):
+if st.button("実行"):
     st.divider()
-    st.write(f"### 選択された専門家: {expert_type}")
-    st.write(f"#### ユーザー入力: {user_input}")
-    if user_input:
-        with st.spinner("LLMに問い合わせ中..."):
-            try:
-                answer = ask_llm(user_input, expert_type)
-                st.success(answer)
-            except Exception as e:
-                st.error(f"エラーが発生しました: {e}")
+
+    if selected_item == "法律の専門家":
+        if input_message1:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "user", "content": input_message1}
+                ]
+            )
+            st.write(f"法律相談の結果: {response.choices[0].message.content}")
+
     else:
-        st.warning("質問や相談内容を入力してください。")
+        if input_message2:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "user", "content": input_message2}
+                ]
+            )
+            st.write(f"医療相談の結果: {response.choices[0].message.content}")
+
+          
+
+      
